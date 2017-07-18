@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+set -x
+
+: "${BOSHLITE_UPSTREAM:?required}"
+: "${BOSHLITE_MINE:?required}"
+
+bosh delete-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+  --state ${BOSHLITE_MINE}/vbox/state.json \
+  -o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml \
+  -o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml \
+  -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
+  -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
+  -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+  --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
+  --vars-file=${BOSHLITE_MINE}/vbox/vbox.yml
+
+sudo route del -net 10.244.0.0/16

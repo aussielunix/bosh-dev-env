@@ -1,0 +1,83 @@
+---
+name: concourse
+
+releases:
+  - name: concourse
+    version: latest
+  - name: garden-runc
+    version: latest
+
+stemcells:
+  - alias: default
+    os: ubuntu-trusty
+    version: latest
+
+instance_groups:
+  - name: web
+    instances: 1
+    azs: [z1]
+    stemcell: default
+    vm_type: default
+    networks:
+      - name: default
+        static_ips:
+          - 10.244.0.101
+    jobs:
+      - release: concourse
+        name: atc
+        properties:
+          postgresql_database: atc
+          external_url: http://10.244.0.101:8080
+          development_mode: true
+          basic_auth_username: test
+          basic_auth_password: password
+      - release: concourse
+        name: tsa
+        properties: {}
+
+  - name: db
+    instances: 1
+    azs: [z1]
+    stemcell: default
+    vm_type: default
+    networks: [{name: default}]
+    persistent_disk: 10240
+    jobs:
+      - release: concourse
+        name: postgresql
+        properties:
+          databases:
+          - name: atc
+            role: atc
+            password: dummy-postgres-password
+
+  - name: worker
+    instances: 1
+    azs: [z1]
+    stemcell: default
+    vm_type: default
+    networks: [{name: default}]
+    jobs:
+      - release: concourse
+        name: groundcrew
+        properties: {}
+      - release: concourse
+        name: baggageclaim
+        properties: {}
+      - release: garden-runc
+        name: garden
+        properties:
+          garden:
+            # cannot enforce quotas in bosh-lite
+            disk_quota_enabled: false
+            listen_network: tcp
+            listen_address: 0.0.0.0:7777
+            allow_host_access: true
+
+update:
+  canaries: 1
+  max_in_flight: 3
+  serial: false
+  canary_watch_time: 1000-60000
+  update_watch_time: 1000-60000
+
