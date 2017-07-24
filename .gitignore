@@ -2,3 +2,4 @@
 artifacts/
 .envrc
 .envrc-mine
+vbox/id_rsa*
