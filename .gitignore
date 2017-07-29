@@ -1,5 +1,7 @@
 **/creds.yml
-artifacts/
+artifacts/*
+!artifacts/.gitkeep
 .envrc
 .envrc-mine
 vbox/id_rsa*
+vbox/state.json
