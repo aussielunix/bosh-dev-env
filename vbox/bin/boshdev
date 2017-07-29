@@ -1,0 +1,107 @@
+#!/usr/bin/env bash
+
+# Exit immediately if there is an error
+set -e
+
+# cause a pipeline (for example, curl -s http://sipb.mit.edu/ | grep foo) to produce a failure return code if any command errors not just the last command of the pipeline.
+set -o pipefail
+
+# echo out each line of the shell as it executes
+# set -x
+
+bssh () {
+  ip=$(bosh int $BOSHLITE_MINE/vbox/vbox.yml --path /internal_ip)
+  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $BOSHLITE_MINE/vbox/id_rsa jumpbox@$ip
+}
+
+get_vm_id() {
+  if [[ -f $BOSHLITE_MINE/vbox/state.json ]]; then
+    BOSH_LITE_VM_ID=$(cat $BOSHLITE_MINE/vbox/state.json | python -c "import json,sys;obj=json.load(sys.stdin);print obj['current_vm_cid'];")
+  fi
+}
+
+pause_vm() {
+  VBoxManage controlvm $BOSH_LITE_VM_ID savestate
+}
+
+resume_vm() {
+  VBoxManage startvm $BOSH_LITE_VM_ID --type=headless
+}
+
+create_vm() {
+  : "${BOSHLITE_UPSTREAM:?required}"
+  : "${BOSHLITE_MINE:?required}"
+
+  bosh create-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+  --state ${BOSHLITE_MINE}/vbox/state.json \
+  -o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml \
+  -o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml \
+  -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
+  -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
+  -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+  --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
+  --vars-file=${BOSHLITE_MINE}/vbox/vbox.yml
+
+  install -m 0600 /dev/null ${BOSHLITE_MINE}/vbox/id_rsa
+  bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/vbox/id_rsa
+  sudo route add -net 10.244.0.0/16 gw 192.168.50.6
+}
+
+destroy_vm() {
+  : "${BOSHLITE_UPSTREAM:?required}"
+  : "${BOSHLITE_MINE:?required}"
+
+  bosh delete-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+    --state ${BOSHLITE_MINE}/vbox/state.json \
+    -o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml \
+    -o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml \
+    -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
+    -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
+    -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+    --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
+    --vars-file=${BOSHLITE_MINE}/vbox/vbox.yml
+
+  sudo route del -net 10.244.0.0/16
+}
+
+
+main() {
+  case $1 in
+    ssh)
+      bssh
+      ;;
+    pause)
+      get_vm_id
+      echo "Pausing Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      pause_vm
+      ;;
+    resume)
+      get_vm_id
+      echo "Resuming Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      resume_vm
+      ;;
+    up)
+      create_vm
+      get_vm_id
+      echo "Created Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      ;;
+    destroy)
+      get_vm_id
+      echo "Destroying Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      destroy_vm
+      ;;
+    status)
+      get_vm_id
+      if [[ $BOSH_LITE_VM_ID ]]; then
+        echo "Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+        VBoxManage showvminfo $BOSH_LITE_VM_ID | grep "State:"
+      else
+        echo "Unable to find a bosh director vm"
+      fi
+      ;;
+    *)
+      echo "Usage: boshdev {ssh|pause|resume|up|destroy|status}" ;;
+  esac
+}
+
+main $@
