@@ -40,7 +40,7 @@ create_vm() {
   -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
   -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
   --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
-  --vars-file=${BOSHLITE_MINE}/vbox/vbox.yml
+  --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 
   install -m 0600 /dev/null ${BOSHLITE_MINE}/vbox/id_rsa
   bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/vbox/id_rsa
@@ -59,7 +59,7 @@ destroy_vm() {
     -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
     -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
     --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
-    --vars-file=${BOSHLITE_MINE}/vbox/vbox.yml
+    --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 
   sudo route del -net 10.244.0.0/16
 }

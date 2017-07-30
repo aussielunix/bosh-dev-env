@@ -1,6 +1,43 @@
----
-director_name: "Bosh Lite Director"
-internal_ip: 192.168.50.6
-internal_gw: 192.168.50.1
-internal_cidr: 192.168.50.0/24
-outbound_network_name: NatNetwork
+- type: replace
+  path: /networks/name=default/subnets/0/dns
+  value: [61.88.88.88, 8.8.8.8]
+
+- type: replace
+  path: /instance_groups/name=bosh/properties/ntp
+  value:
+    - 0.au.pool.ntp.org
+    - 1.au.pool.ntp.org
+    - 2.au.pool.ntp.org
+    - 3.au.pool.ntp.org
+
+# Configure VM sizes
+- type: replace
+  path: /resource_pools/name=vms/cloud_properties?
+  value:
+    cpus: 2
+    memory: 12_288
+    ephemeral_disk: 30_720
+
+# Configure NTP settings
+- type: replace
+  path: /instance_groups/name=bosh/jobs/-
+  value: &cpi_job
+    name: virtualbox_cpi
+    release: bosh-virtualbox-cpi
+    properties:
+      # todo remove once cpi dont know about these
+      agent:
+        mbus: nats://nats:((nats_password))@((internal_ip)):4222
+      ntp:
+      - 0.au.pool.ntp.org
+      - 1.au.pool.ntp.org
+      - 2.au.pool.ntp.org
+      - 3.au.pool.ntp.org
+      blobstore:
+        address: ((internal_ip))
+        port: 25250
+        provider: dav
+        agent:
+          user: agent
+          password: ((blobstore_agent_password))
+
