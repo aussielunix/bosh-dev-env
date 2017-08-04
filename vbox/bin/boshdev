@@ -84,6 +84,8 @@ main() {
       create_vm
       get_vm_id
       echo "Created Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      echo "Now create an alias and login:"
+      echo "bosh -e 192.168.50.6 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox && bosh -e vbox login"
       ;;
     destroy)
       get_vm_id
