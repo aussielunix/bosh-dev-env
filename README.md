@@ -10,9 +10,10 @@ This repo compliments [bosh-deployment](https://github.com/cloudfoundry/bosh-dep
 git clone git@github.com:cloudfoundry/bosh-deployment.git ~/src/bosh-deployment
 git clone git@github.com:aussielunix/bosh-dev-env.git ~/workspace/bosh/bosh-dev-env
 cd ~/workspace/bosh/bosh-dev-env
-# tune .envrc (optional)
 direnv allow (optional)
 boshdev up
+bosh -e 192.168.50.6 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox
+bosh -e vbox login
 bosh -e vbox us artifacts/bosh-warden-boshlite-ubuntu-trusty-go_agent.tar.gz
 bosh -e vbox ur artifacts/garden-runc-release.tar.gz
 bosh -e vbox ur artifacts/concourse.tar.gz
