@@ -1,5 +1,5 @@
 export BOSHLITE_UPSTREAM="/home/ubuntu/src/bosh-deployment"
-export BOSHLITE_MINE="/home/ubuntu/src/bosh-dev-env"
+export BOSHLITE_MINE="/home/ubuntu/workspace/bosh/bosh-dev-env"
 
 export BOSH_CLIENT=admin
 export BOSH_CLIENT_SECRET=`bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /admin_password`
