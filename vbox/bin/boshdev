@@ -10,7 +10,7 @@ set -o pipefail
 # set -x
 
 bssh () {
-  ip=$(bosh int $BOSHLITE_MINE/vbox/vbox.yml --path /internal_ip)
+  ip=$(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip)
   ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $BOSHLITE_MINE/vbox/id_rsa jumpbox@$ip
 }
 
