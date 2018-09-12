@@ -39,16 +39,18 @@ create_vm() {
   -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
   -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
   -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+  -o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml \
+  -o ${BOSHLITE_MINE}/vbox/vbox.yml \
   --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
   --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 
   install -m 0600 /dev/null ${BOSHLITE_MINE}/vbox/id_rsa
   bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/vbox/id_rsa
-  sudo route add -net 10.244.0.0/16 gw 192.168.50.6
+  sudo route add -net 10.244.0.0/16 gw 192.168.43.252
 }
 
 prepare_director() {
-  bosh -e 192.168.50.6 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox
+  bosh -e 192.168.43.252 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox
   bosh -e vbox login
 }
 
@@ -91,7 +93,7 @@ main() {
       prepare_director
       echo "Created Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
       #echo "Now create an alias and login:"
-      #echo "bosh -e 192.168.50.6 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox && bosh -e vbox login"
+      #echo "bosh -e 192.168.43.252 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox && bosh -e vbox login"
       ;;
     destroy)
       get_vm_id
