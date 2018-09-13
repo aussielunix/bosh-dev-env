@@ -40,7 +40,8 @@ create_vm() {
   -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
   -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
   -o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml \
-  -o ${BOSHLITE_MINE}/vbox/vbox.yml \
+  -o ${BOSHLITE_MINE}/ops/dns_override.yml \
+  -o ${BOSHLITE_MINE}/ops/vm_size.yml \
   --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
   --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 

@@ -1,8 +1,8 @@
 ---
-# Configure VM sizes
+# Configure Director VM Size
 - type: replace
   path: /resource_pools/name=vms/cloud_properties?
   value:
     cpus: 2
-    memory: 12_288
-    ephemeral_disk: 30_720
+    memory: 24_576
+    ephemeral_disk: 102_400
