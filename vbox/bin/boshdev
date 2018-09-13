@@ -50,9 +50,20 @@ create_vm() {
   sudo route add -net 10.244.0.0/16 gw 192.168.43.252
 }
 
-prepare_director() {
-  bosh -e 192.168.43.252 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox
-  bosh -e vbox login
+announce_director() {
+	echo "Created a new Bosh_Lite VM."
+	echo
+	echo "CA:"
+	echo "$(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca)"
+	echo
+	echo "ID: $BOSH_LITE_VM_ID"
+	echo "User: admin"
+	echo "Pass: $(bosh int $BOSHLITE_MINE/vbox/creds.yml --path /admin_password)"
+	echo
+	echo "Now create an alias and login"
+	echo
+	echo "bosh -e 192.168.43.252 --ca-cert ca.crt alias-env vbox"
+	echo "bosh -e vbox login"
 }
 
 destroy_vm() {
@@ -91,10 +102,7 @@ main() {
     up)
       create_vm
       get_vm_id
-      prepare_director
-      echo "Created Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
-      #echo "Now create an alias and login:"
-      #echo "bosh -e 192.168.43.252 --ca-cert <(bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /director_ssl/ca) alias-env vbox && bosh -e vbox login"
+      announce_director
       ;;
     destroy)
       get_vm_id
