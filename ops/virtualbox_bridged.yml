@@ -9,5 +9,4 @@
   path: /networks/name=default/subnets/0/cloud_properties?
   value:
     type: bridged
-    name: wlp2s0
-
+    name: ((network_device))

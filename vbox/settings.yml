@@ -4,3 +4,4 @@ internal_ip: 192.168.43.252
 internal_gw: 192.168.43.3
 internal_cidr: 192.168.43.0/24
 outbound_network_name: NatNetwork
+network_device: en0
