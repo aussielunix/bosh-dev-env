@@ -39,6 +39,8 @@ create_vm() {
   -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
   -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
   -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+  -o ${BOSHLITE_UPSTREAM}/uaa.yml \
+  -o ${BOSHLITE_UPSTREAM}/credhub.yml \
   -o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml \
   -o ${BOSHLITE_MINE}/ops/dns_override.yml \
   -o ${BOSHLITE_MINE}/ops/vm_size.yml \
