@@ -1,0 +1,12 @@
+---
+- type: replace
+  path: /releases/name=bosh-virtualbox-cpi
+  value:
+    name: bosh-virtualbox-cpi
+    url: file:///home/lunix/bosh-dev-env/bosh-virtualbox-cpi.tgz
+
+- type: replace
+  path: /networks/name=default/subnets/0/cloud_properties?
+  value:
+    type: bridged
+    name: ((network_device))
