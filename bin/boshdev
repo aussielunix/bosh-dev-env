@@ -1,0 +1,164 @@
+#!/usr/bin/env bash
+
+# Exit immediately if there is an error
+set -e
+
+# cause a pipeline (for example, curl -s http://sipb.mit.edu/ | grep foo) to produce a failure return code if any command errors not just the last command of the pipeline.
+set -o pipefail
+
+check_settings_file_exists(){
+  if [[ ! -e "${BOSHLITE_MINE}/config/settings.yml" ]]
+  then
+    echo "${BOSHLITE_MINE}/config/settings.yml NOT FOUND."
+    exit 1
+  fi
+}
+
+ops_files() {
+  local retval="-o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/bosh-lite.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/uaa.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/credhub.yml "
+  local retval+="-o ${BOSHLITE_MINE}/ops/dns_override.yml "
+  local retval+="-o ${BOSHLITE_MINE}/ops/vm_size.yml "
+  echo $retval
+}
+
+ bridged_ops_files() {
+  local retval="$(ops_files) "
+  local retval+="-o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml "
+  echo $retval
+}
+
+determine_ops_files() {
+  opsfiles=$(ops_files)
+  network_type=$(bosh int $BOSHLITE_MINE/config/settings.yml --path /network_type)
+  if [[ $network_type == "bridged" ]]
+  then
+    opsfiles=$(bridged_ops_files)
+  fi
+}
+
+bssh () {
+  ip=$(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+  ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $BOSHLITE_MINE/config/id_rsa jumpbox@$ip
+}
+
+get_vm_id() {
+  if [[ -f $BOSHLITE_MINE/config/state.json ]]; then
+    BOSH_LITE_VM_ID=$(cat $BOSHLITE_MINE/config/state.json | python -c "import json,sys;obj=json.load(sys.stdin);print obj['current_vm_cid'];")
+  fi
+}
+
+pause_vm() {
+  VBoxManage controlvm $BOSH_LITE_VM_ID savestate
+}
+
+resume_vm() {
+  VBoxManage startvm $BOSH_LITE_VM_ID --type=headless
+}
+
+create_vm() {
+  : "${BOSHLITE_UPSTREAM:?required}"
+  : "${BOSHLITE_MINE:?required}"
+
+  bosh create-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+  $opsfiles \
+  --state ${BOSHLITE_MINE}/config/state.json \
+  --vars-store=${BOSHLITE_MINE}/config/creds.yml \
+  --vars-file=${BOSHLITE_MINE}/config/settings.yml
+
+  install -m 0600 /dev/null ${BOSHLITE_MINE}/config/id_rsa
+  bosh int ${BOSHLITE_MINE}/config/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/config/id_rsa
+  sudo route add -net 10.244.0.0/16 gw $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+}
+
+announce_director() {
+  echo
+  echo "-- BOSH --"
+  echo
+  echo "Created Bosh_Lite VM with Virtualbox ID $BOSH_LITE_VM_ID"
+  echo
+  echo "Dumping BOSH CA to config/boshca.crt"
+  bosh int $BOSHLITE_MINE/config/creds.yml --path /director_ssl/ca > $BOSHLITE_MINE/config/boshca.crt
+  echo
+  echo "BOSH Client: admin"
+  echo "BOSH Client Secret: $(bosh int $BOSHLITE_MINE/config/creds.yml --path /admin_password)"
+  echo
+  echo "bosh -e $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip) --ca-cert config/boshca.crt alias-env vbox"
+  echo "bosh -e vbox login"
+  echo
+  echo "-- CREDHUB --"
+  echo
+  echo "CREDHUB_SERVER=https://$(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip):8844"
+  echo "Dumping BOSH & CREDHUB CA to config/credhubca.crt"
+  bosh int $BOSHLITE_MINE/config/creds.yml --path /director_ssl/ca > $BOSHLITE_MINE/config/credhubca.crt
+  bosh int $BOSHLITE_MINE/config/creds.yml --path=/credhub_tls/ca >> $BOSHLITE_MINE/config/credhubca.crt
+  echo
+  echo "Credhub Client: credhub-admin"
+  echo "Credhub Secret: $(bosh int $BOSHLITE_MINE/config/creds.yml --path=/credhub_admin_client_secret)"
+  echo
+  echo "credhub api -s https://$(bosh int config/settings.yml --path /internal_ip):8844 --ca-cert=config/credhubca.crt"
+  echo "credhub login --client-name=credhub-admin --client-secret=xxxxxxxxxxxxx"
+  echo
+}
+
+destroy_vm() {
+  : "${BOSHLITE_UPSTREAM:?required}"
+  : "${BOSHLITE_MINE:?required}"
+
+  bosh delete-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+    --state ${BOSHLITE_MINE}/config/state.json \
+    $opsfiles \
+    --vars-store=${BOSHLITE_MINE}/config/creds.yml \
+    --vars-file=${BOSHLITE_MINE}/config/settings.yml
+
+  sudo route del -net 10.244.0.0/16
+}
+
+main() {
+  case $1 in
+    ssh)
+      bssh
+      ;;
+    pause)
+      get_vm_id
+      echo "Pausing Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      pause_vm
+      ;;
+    resume)
+      get_vm_id
+      echo "Resuming Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      resume_vm
+      ;;
+    up)
+      check_settings_file_exists
+      determine_ops_files
+      create_vm
+      get_vm_id
+      announce_director
+      ;;
+    destroy)
+      get_vm_id
+      determine_ops_files
+      echo "Destroying Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+      destroy_vm
+      ;;
+    status)
+      get_vm_id
+      if [[ $BOSH_LITE_VM_ID ]]; then
+        echo "Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
+        VBoxManage showvminfo $BOSH_LITE_VM_ID | grep "State:"
+      else
+        echo "Unable to find a bosh director vm"
+      fi
+      ;;
+    *)
+      echo "Usage: boshdev {ssh|pause|resume|up|destroy|status}" ;;
+  esac
+}
+
+main $@

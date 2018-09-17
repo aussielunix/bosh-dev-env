@@ -1,4 +1,4 @@
 export BOSHLITE_UPSTREAM="/home/ubuntu/src/bosh-deployment"
 export BOSHLITE_MINE="/home/ubuntu/workspace/bosh/bosh-dev-env"
 
-PATH_add ${BOSHLITE_MINE}/vbox/bin
+PATH_add ${BOSHLITE_MINE}/bin
