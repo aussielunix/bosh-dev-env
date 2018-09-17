@@ -6,6 +6,14 @@ set -e
 # cause a pipeline (for example, curl -s http://sipb.mit.edu/ | grep foo) to produce a failure return code if any command errors not just the last command of the pipeline.
 set -o pipefail
 
+check_settings_file_exists(){
+  if [[ ! -e "${BOSHLITE_MINE}/vbox/settings.yml" ]]
+  then
+    echo "${BOSHLITE_MINE}/vbox/settings.yml NOT FOUND."
+    exit 1
+  fi
+}
+
 ops_files() {
   local retval="-o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml "
   local retval+="-o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml "
@@ -127,6 +135,7 @@ main() {
       resume_vm
       ;;
     up)
+      check_settings_file_exists
       determine_ops_files
       create_vm
       get_vm_id
