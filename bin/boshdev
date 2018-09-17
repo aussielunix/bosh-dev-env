@@ -47,6 +47,12 @@ bssh () {
   ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -i $BOSHLITE_MINE/config/id_rsa jumpbox@$ip
 }
 
+get_bosh_deployment_git_sha() {
+  pushd $BOSHLITE_UPSTREAM
+  git rev-parse --short HEAD > $BOSHLITE_MINE/config/bosh-deployment.gitsha
+  popd
+}
+
 get_vm_id() {
   if [[ -f $BOSHLITE_MINE/config/state.json ]]; then
     BOSH_LITE_VM_ID=$(cat $BOSHLITE_MINE/config/state.json | python -c "import json,sys;obj=json.load(sys.stdin);print obj['current_vm_cid'];")
@@ -80,7 +86,7 @@ announce_director() {
   echo
   echo "-- BOSH --"
   echo
-  echo "Created Bosh_Lite VM with Virtualbox ID $BOSH_LITE_VM_ID"
+  echo "Created a Bosh_Lite VM with Virtualbox ID $BOSH_LITE_VM_ID"
   echo
   echo "Dumping BOSH CA to config/boshca.crt"
   bosh int $BOSHLITE_MINE/config/creds.yml --path /director_ssl/ca > $BOSHLITE_MINE/config/boshca.crt
@@ -140,6 +146,7 @@ main() {
       create_vm
       get_vm_id
       announce_director
+      get_bosh_deployment_git_sha
       ;;
     destroy)
       get_vm_id
