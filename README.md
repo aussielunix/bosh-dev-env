@@ -1,14 +1,14 @@
 # bosh-dev-env
 
-Everything needed for a local bosh development environment.  
+Bootstrap a BOSH development environment in Virtualbox.
+At the end of this you will have a BOSH director (with Warden), UAA and Credhub.
+
 This can be operated in one of two modes.
 
 1. A BOSH director in a local Virtualbox with NAT only networking
 2. A BOSH director in Virtualbox bridged to the LAN
 
 There is two example settings.yml files in this repo.
-
-This repo compliments [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) to make it easier to have a local bosh development environment.  
 
 ## TL;DR
 
