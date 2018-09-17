@@ -1,6 +1,6 @@
 # bosh-dev-env
 
-Bootstrap a BOSH development environment in Virtualbox.
+Bootstrap a BOSH development environment in Virtualbox.  
 At the end of this you will have a BOSH director (with Warden), UAA and Credhub.
 
 This can be operated in one of two modes.
