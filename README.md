@@ -6,7 +6,7 @@ This can be operated in one of two modes.
 1. A BOSH director in a local Virtualbox with NAT only networking
 2. A BOSH director in Virtualbox bridged to the LAN
 
-There is two exmaple settings.yml files in this repo.
+There is two example settings.yml files in this repo.
 
 This repo compliments [bosh-deployment](https://github.com/cloudfoundry/bosh-deployment) to make it easier to have a local bosh development environment.  
 
