@@ -16,17 +16,12 @@ This repo compliments [bosh-deployment](https://github.com/cloudfoundry/bosh-dep
 git clone git@github.com:cloudfoundry/bosh-deployment.git ~/src/bosh-deployment
 git clone git@github.com:aussielunix/bosh-dev-env.git ~/workspace/bosh/bosh-dev-env
 cd ~/workspace/bosh/bosh-dev-env
+vim .envrc #tune based on example
 direnv allow
-vim vbox/settings.yml # tune based on one of two examples
+vim config/settings.yml # tune based on one of two examples
 boshdev up
 # Follow post up messages
 ```
-
-## Tutorial
-
-I have published a [tutorial](http://aussie.lunix.com.au/tutorial/bosh/bosh_localdev/) that walks you through getting a local bosh development environment complete with installing virtualbox, bosh cli, deploying a bosh director and a vagrant like workflow.
-
-
 
 <table>
   <tr>
