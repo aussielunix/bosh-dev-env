@@ -1,7 +1,12 @@
-**/creds.yml
 artifacts/*
 !artifacts/.gitkeep
+
 .envrc
-.envrc-mine
-vbox/id_rsa*
-vbox/state.json
+
+config/creds.yml
+config/bosh-deployment.gitsha
+config/*.crt
+config/id_rsa
+config/settings.yml
+config/state.json
+
