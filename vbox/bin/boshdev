@@ -6,8 +6,33 @@ set -e
 # cause a pipeline (for example, curl -s http://sipb.mit.edu/ | grep foo) to produce a failure return code if any command errors not just the last command of the pipeline.
 set -o pipefail
 
-# echo out each line of the shell as it executes
-# set -x
+ops_files() {
+  local retval="-o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/bosh-lite.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/uaa.yml "
+  local retval+="-o ${BOSHLITE_UPSTREAM}/credhub.yml "
+  local retval+="-o ${BOSHLITE_MINE}/ops/dns_override.yml "
+  local retval+="-o ${BOSHLITE_MINE}/ops/vm_size.yml "
+  echo $retval
+}
+
+ bridged_ops_files() {
+  local retval="$(ops_files) "
+  local retval+="-o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml "
+  echo $retval
+}
+
+determine_ops_files() {
+  opsfiles=$(ops_files)
+  network_type=$(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /network_type)
+  if [[ $network_type == "bridged" ]]
+  then
+    opsfiles=$(bridged_ops_files)
+  fi
+}
 
 bssh () {
   ip=$(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip)
@@ -33,29 +58,21 @@ create_vm() {
   : "${BOSHLITE_MINE:?required}"
 
   bosh create-env ${BOSHLITE_UPSTREAM}/bosh.yml \
+  $opsfiles \
   --state ${BOSHLITE_MINE}/vbox/state.json \
-  -o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml \
-  -o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml \
-  -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
-  -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
-  -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
-  -o ${BOSHLITE_UPSTREAM}/uaa.yml \
-  -o ${BOSHLITE_UPSTREAM}/credhub.yml \
-  -o ${BOSHLITE_MINE}/ops/virtualbox_bridged.yml \
-  -o ${BOSHLITE_MINE}/ops/dns_override.yml \
-  -o ${BOSHLITE_MINE}/ops/vm_size.yml \
   --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
   --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 
   install -m 0600 /dev/null ${BOSHLITE_MINE}/vbox/id_rsa
   bosh int ${BOSHLITE_MINE}/vbox/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/vbox/id_rsa
-  sudo route add -net 10.244.0.0/16 gw 192.168.43.252
+  sudo route add -net 10.244.0.0/16 gw $(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip)
 }
 
 announce_director() {
-  echo "Created Bosh_Lite VM with Virtualbox ID $BOSH_LITE_VM_ID"
   echo
   echo "-- BOSH --"
+  echo
+  echo "Created Bosh_Lite VM with Virtualbox ID $BOSH_LITE_VM_ID"
   echo
   echo "Dumping BOSH CA to ./boshca.crt"
   bosh interpolate vbox/creds.yml --path /director_ssl/ca > boshca.crt
@@ -63,12 +80,12 @@ announce_director() {
   echo "BOSH Client: admin"
   echo "BOSH Client Secret: $(bosh int $BOSHLITE_MINE/vbox/creds.yml --path /admin_password)"
   echo
-  echo "bosh -e 192.168.43.252 --ca-cert boshca.crt alias-env vbox"
+  echo "bosh -e $(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip) --ca-cert boshca.crt alias-env vbox"
   echo "bosh -e vbox login"
   echo
   echo "-- CREDHUB --"
   echo
-  echo "CREDHUB_SERVER=https://192.168.43.252:8844"
+  echo "CREDHUB_SERVER=https://$(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip):8844"
   echo "Dumping BOSH & CREDHUB CA to ./credhubca.crt"
   bosh interpolate vbox/creds.yml --path /director_ssl/ca > credhubca.crt
   bosh interpolate vbox/creds.yml --path=/credhub_tls/ca >> credhubca.crt
@@ -76,7 +93,7 @@ announce_director() {
   echo "Credhub Client: credhub-admin"
   echo "Credhub Secret: $(bosh interpolate vbox/creds.yml --path=/credhub_admin_client_secret)"
   echo
-  echo "credhub api -s https://192.168.43.252:8844 --ca-cert=credhubca.crt"
+  echo "credhub api -s https://$(bosh int $BOSHLITE_MINE/vbox/settings.yml --path /internal_ip):8844 --ca-cert=credhubca.crt"
   echo "credhub login --client-name=credhub-admin --client-secret=xxxxxxxxxxxxx"
   echo
 }
@@ -87,17 +104,12 @@ destroy_vm() {
 
   bosh delete-env ${BOSHLITE_UPSTREAM}/bosh.yml \
     --state ${BOSHLITE_MINE}/vbox/state.json \
-    -o ${BOSHLITE_UPSTREAM}/virtualbox/cpi.yml \
-    -o ${BOSHLITE_UPSTREAM}/virtualbox/outbound-network.yml \
-    -o ${BOSHLITE_UPSTREAM}/bosh-lite.yml \
-    -o ${BOSHLITE_UPSTREAM}/bosh-lite-runc.yml \
-    -o ${BOSHLITE_UPSTREAM}/jumpbox-user.yml \
+    $opsfiles \
     --vars-store=${BOSHLITE_MINE}/vbox/creds.yml \
     --vars-file=${BOSHLITE_MINE}/vbox/settings.yml
 
   sudo route del -net 10.244.0.0/16
 }
-
 
 main() {
   case $1 in
@@ -115,12 +127,14 @@ main() {
       resume_vm
       ;;
     up)
+      determine_ops_files
       create_vm
       get_vm_id
       announce_director
       ;;
     destroy)
       get_vm_id
+      determine_ops_files
       echo "Destroying Bosh_Lite VM with ID $BOSH_LITE_VM_ID"
       destroy_vm
       ;;
