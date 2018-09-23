@@ -1,30 +1,41 @@
----
 azs:
 - name: z1
 - name: z2
 - name: z3
-
-vm_types:
-- name: default
-
-disk_types:
-- name: default
-  disk_size: 1024
-
-networks:
-- name: default
-  type: manual
-  subnets:
-  - azs: [z1, z2, z3]
-    dns: [61.88.88.88]
-    range: 10.244.0.0/24
-    gateway: 10.244.0.1
-    static: [10.244.0.100-10.244.0.200]
-    reserved: []
-
 compilation:
-  workers: 5
   az: z1
+  network: default
   reuse_compilation_vms: true
   vm_type: default
-  network: default
+  workers: 2
+disk_types:
+- disk_size: 3000
+  name: default
+- disk_size: 50000
+  name: large
+networks:
+- name: default
+  subnets:
+  - azs:
+    - z1
+    - z2
+    - z3
+    cloud_properties:
+      name: default
+    dns:
+    - 61.88.88.88
+    gateway: 10.244.0.1
+    range: 10.244.0.0/24
+    reserved: [10.244.0.100-10.244.0.150]
+  type: manual
+vm_types:
+- cloud_properties:
+    cpu: 2
+    disk: 3240
+    ram: 1024
+  name: default
+- cloud_properties:
+    cpu: 2
+    disk: 30240
+    ram: 4096
+  name: large
