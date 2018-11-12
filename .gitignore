@@ -7,6 +7,4 @@ config/creds.yml
 config/bosh-deployment.gitsha
 config/*.crt
 config/id_rsa
-config/settings.yml
 config/state.json
-
