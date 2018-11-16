@@ -123,6 +123,11 @@ destroy_vm() {
     --vars-file=${BOSHLITE_MINE}/config/settings.yml
 
   sudo route del -net 10.244.0.0/16
+
+  rm ${BOSHLITE_MINE}/config/boshca.crt
+  rm ${BOSHLITE_MINE}/config/credhubca.crt
+  rm ${BOSHLITE_MINE}/config/id_rsa
+  rm ${BOSHLITE_MINE}/config/creds.yml
 }
 
 main() {
