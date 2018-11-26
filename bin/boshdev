@@ -6,10 +6,16 @@ set -e
 # cause a pipeline (for example, curl -s http://sipb.mit.edu/ | grep foo) to produce a failure return code if any command errors not just the last command of the pipeline.
 set -o pipefail
 
-check_settings_file_exists(){
+check_ready(){
   if [[ ! -e "${BOSHLITE_MINE}/config/settings.yml" ]]
   then
     echo "${BOSHLITE_MINE}/config/settings.yml NOT FOUND."
+    exit 1
+  fi
+  if [[ ! -e "${BOSHLITE_UPSTREAM}" ]]
+  then
+    echo "${BOSHLITE_UPSTREAM} NOT FOUND."
+    echo "Has \$BOSHLITE_UPSTREAM been set ?"
     exit 1
   fi
 }
@@ -132,6 +138,9 @@ destroy_vm() {
 
 main() {
   case $1 in
+    check)
+      check_ready && echo "everything is ready."
+      ;;
     ssh)
       bssh
       ;;
@@ -146,7 +155,7 @@ main() {
       resume_vm
       ;;
     up)
-      check_settings_file_exists
+      check_ready
       determine_ops_files
       create_vm
       get_vm_id
@@ -169,7 +178,7 @@ main() {
       fi
       ;;
     *)
-      echo "Usage: boshdev {ssh|pause|resume|up|destroy|status}" ;;
+      echo "Usage: boshdev {check|ssh|pause|resume|up|destroy|status}" ;;
   esac
 }
 
