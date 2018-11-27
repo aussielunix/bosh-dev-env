@@ -85,7 +85,21 @@ create_vm() {
 
   install -m 0600 /dev/null ${BOSHLITE_MINE}/config/id_rsa
   bosh int ${BOSHLITE_MINE}/config/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/config/id_rsa
-  sudo route add -net 10.244.0.0/16 gw $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+
+  set -x
+  if [ "$(uname)" = "Darwin" ]; then
+    sudo route add -net 10.244.0.0/16 $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+  elif [ "$(uname)" = "Linux" ]; then
+    if type ip > /dev/null 2>&1; then
+      sudo ip route add 10.244.0.0/16 via $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+    elif type route > /dev/null 2>&1; then
+      sudo route add -net 10.244.0.0/16 gw $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+    else
+      echo "ERROR adding route"
+      exit 1
+    fi
+  fi
+  set +x
 }
 
 announce_director() {
@@ -128,7 +142,20 @@ destroy_vm() {
     --vars-store=${BOSHLITE_MINE}/config/creds.yml \
     --vars-file=${BOSHLITE_MINE}/config/settings.yml
 
-  sudo route del -net 10.244.0.0/16
+  set -x
+  if [ "$(uname)" = "Darwin" ]; then
+    sudo route -n delete 10.244.0.0/16  $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+  elif [ "$(uname)" = "Linux" ]; then
+    if type ip > /dev/null 2>&1; then
+      sudo ip route del 10.244.0.0/16 via $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
+    elif type route > /dev/null 2>&1; then
+      sudo route del -net 10.244.0.0/16
+    else
+      echo "ERROR adding route"
+      exit 1
+    fi
+  fi
+  set +x
 
   rm ${BOSHLITE_MINE}/config/boshca.crt
   rm ${BOSHLITE_MINE}/config/credhubca.crt
