@@ -86,7 +86,6 @@ create_vm() {
   install -m 0600 /dev/null ${BOSHLITE_MINE}/config/id_rsa
   bosh int ${BOSHLITE_MINE}/config/creds.yml --path /jumpbox_ssh/private_key > ${BOSHLITE_MINE}/config/id_rsa
 
-  set -x
   if [ "$(uname)" = "Darwin" ]; then
     sudo route add -net 10.244.0.0/16 $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
   elif [ "$(uname)" = "Linux" ]; then
@@ -99,7 +98,6 @@ create_vm() {
       exit 1
     fi
   fi
-  set +x
 }
 
 announce_director() {
@@ -142,7 +140,6 @@ destroy_vm() {
     --vars-store=${BOSHLITE_MINE}/config/creds.yml \
     --vars-file=${BOSHLITE_MINE}/config/settings.yml
 
-  set -x
   if [ "$(uname)" = "Darwin" ]; then
     sudo route -n delete 10.244.0.0/16  $(bosh int $BOSHLITE_MINE/config/settings.yml --path /internal_ip)
   elif [ "$(uname)" = "Linux" ]; then
@@ -155,7 +152,6 @@ destroy_vm() {
       exit 1
     fi
   fi
-  set +x
 
   rm ${BOSHLITE_MINE}/config/boshca.crt
   rm ${BOSHLITE_MINE}/config/credhubca.crt
