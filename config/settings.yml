@@ -10,3 +10,7 @@ network_device: eno1
 director_vm_cpus: 2
 director_vm_ram_bytes: 8192
 director_vm_ephemeral_disk_megabytes: 10240
+
+director_vm_dns_recursors:
+  - 8.8.4.4
+  - 8.8.8.8

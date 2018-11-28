@@ -1,4 +1,4 @@
 - type: replace
   path: /networks/name=default/subnets/0/dns
-  value: [61.88.88.88, 8.8.8.8]
+  value: ((director_vm_dns_recursors))
 
