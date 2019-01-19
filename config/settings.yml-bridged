@@ -1,8 +1,16 @@
 ---
 director_name: "Bosh Lite Director"
-internal_ip: 192.168.43.252
-internal_gw: 192.168.43.1
-internal_cidr: 192.168.43.0/24
+internal_ip: 10.0.0.2
+internal_gw: 10.0.0.1
+internal_cidr: 10.0.0.0/24
 outbound_network_name: NatNetwork
 network_type: bridged
-network_device: wlp2s0
+network_device: wlp3s0
+
+director_vm_cpus: 2
+director_vm_ram_bytes: 8192
+director_vm_ephemeral_disk_megabytes: 30240
+
+director_vm_dns_recursors:
+  - 8.8.4.4
+  - 8.8.8.8
