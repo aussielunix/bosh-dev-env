@@ -8,3 +8,4 @@ config/bosh-deployment.gitsha
 config/*.crt
 config/id_rsa
 config/state.json
+config/settings.yml
