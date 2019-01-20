@@ -23,7 +23,8 @@ networks:
     cloud_properties:
       name: default
     dns:
-    - 61.88.88.88
+    - 8.8.8.8
+    - 8.8.4.4
     gateway: 10.244.0.1
     range: 10.244.0.0/16
     reserved: [10.244.0.1-10.244.0.10]
