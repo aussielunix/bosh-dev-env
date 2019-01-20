@@ -1,7 +1,7 @@
 # bosh-dev-env
 
 Bootstrap a BOSH development environment in Virtualbox.  
-At the end of this you will have a BOSH director (with Warden), UAA and Credhub.
+At the end of this you will have a BOSH director, UAA and Credhub.
 
 This can be operated in one of two modes.
 
@@ -9,6 +9,7 @@ This can be operated in one of two modes.
 2. A BOSH director in Virtualbox bridged to the LAN
 
 There is two example settings.yml files in this repo.
+
 
 ## TL;DR
 
@@ -28,7 +29,7 @@ boshdev up
     <th>Author</th><td>Mick Pollard (aussielunix at g mail dot com)</td>
   </tr>
   <tr>
-    <th>Copyright</th><td>Copyright (c) 2018 by Mick Pollard</td>
+    <th>Copyright</th><td>Copyright (c) 2019 by Mick Pollard</td>
   </tr>
   <tr>
     <th>License</th><td>Distributed under the MIT License, see <a href="https://github.com/aussielunix/bosh-dev-env/blob/master/LICENSE">LICENSE</a></td>
